@@ -1,0 +1,958 @@
+{
+  "annotations": {
+    "list": []
+  },
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 1,
+  "links": [],
+  "refresh": "10s",
+  "panels": [
+    {
+      "id": 2,
+      "title": "EIP-8142 active",
+      "type": "stat",
+      "description": "Block-in-blobs live anywhere on the network (active) vs not yet (inactive).",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "PBFA97CFB590B2093"
+      },
+      "gridPos": {
+        "h": 3,
+        "w": 8,
+        "x": 0,
+        "y": 0
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {},
+          "mappings": [
+            {
+              "type": "value",
+              "options": {
+                "0": {
+                  "text": "inactive",
+                  "color": "red",
+                  "index": 0
+                },
+                "1": {
+                  "text": "active",
+                  "color": "green",
+                  "index": 1
+                }
+              }
+            }
+          ]
+        },
+        "overrides": []
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "PBFA97CFB590B2093"
+          },
+          "expr": "max(eip8142_active or vector(0))",
+          "legendFormat": "state",
+          "refId": "A"
+        }
+      ],
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "textMode": "value",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        }
+      }
+    },
+    {
+      "id": 14,
+      "title": "Epoch",
+      "type": "stat",
+      "description": "Head epoch from the CL (= beacon_head_slot / 32, SLOTS_PER_EPOCH for the mainnet preset). Bib activates at epoch 1 on this devnet.",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "PBFA97CFB590B2093"
+      },
+      "gridPos": {
+        "h": 3,
+        "w": 8,
+        "x": 8,
+        "y": 0
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "text"
+          },
+          "custom": {},
+          "unit": "short",
+          "decimals": 0,
+          "mappings": []
+        },
+        "overrides": []
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "PBFA97CFB590B2093"
+          },
+          "expr": "floor(max(beacon_head_slot) / 32)",
+          "legendFormat": "epoch",
+          "refId": "A"
+        }
+      ],
+      "options": {
+        "colorMode": "none",
+        "graphMode": "none",
+        "textMode": "value",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        }
+      }
+    },
+    {
+      "id": 15,
+      "title": "Slot",
+      "type": "stat",
+      "description": "Head slot from the CL (Lighthouse beacon_head_slot, network max).",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "PBFA97CFB590B2093"
+      },
+      "gridPos": {
+        "h": 3,
+        "w": 8,
+        "x": 16,
+        "y": 0
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "text"
+          },
+          "custom": {},
+          "unit": "short",
+          "decimals": 0,
+          "mappings": []
+        },
+        "overrides": []
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "PBFA97CFB590B2093"
+          },
+          "expr": "max(beacon_head_slot)",
+          "legendFormat": "slot",
+          "refId": "A"
+        }
+      ],
+      "options": {
+        "colorMode": "none",
+        "graphMode": "none",
+        "textMode": "value",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        }
+      }
+    },
+    {
+      "id": 4,
+      "title": "Block contents",
+      "type": "row",
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 3
+      },
+      "panels": []
+    },
+    {
+      "id": 5,
+      "title": "Blobs per block (EL)",
+      "type": "timeseries",
+      "description": "Stacked payload + type-3 (user) blobs per block; red line = MAX_BLOBS ceiling. The two blob kinds share that budget, so the stack must stay under the line. The 'payload' bar is the actual per-block payload_blob_count; type-3/MAX show for every block.",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "PBFA97CFB590B2093"
+      },
+      "gridPos": {
+        "h": 9,
+        "w": 12,
+        "x": 0,
+        "y": 4
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "drawStyle": "bars",
+            "fillOpacity": 80,
+            "lineWidth": 1,
+            "stacking": {
+              "mode": "normal",
+              "group": "A"
+            }
+          },
+          "unit": "short",
+          "decimals": 0,
+          "min": 0
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "MAX_BLOBS"
+            },
+            "properties": [
+              {
+                "id": "custom.drawStyle",
+                "value": "line"
+              },
+              {
+                "id": "custom.stacking",
+                "value": {
+                  "mode": "none",
+                  "group": "A"
+                }
+              },
+              {
+                "id": "custom.fillOpacity",
+                "value": 0
+              },
+              {
+                "id": "custom.lineWidth",
+                "value": 2
+              },
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "red"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "PBFA97CFB590B2093"
+          },
+          "expr": "max(eip8142_payload_blob_count_last)",
+          "legendFormat": "payload",
+          "refId": "A"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "PBFA97CFB590B2093"
+          },
+          "expr": "clamp_min(max(eip8142_block_blobs) - max(eip8142_payload_blob_count_last), 0)",
+          "legendFormat": "type-3 (user)",
+          "refId": "B"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "PBFA97CFB590B2093"
+          },
+          "expr": "max(eip8142_max_blobs)",
+          "legendFormat": "MAX_BLOBS",
+          "refId": "C"
+        }
+      ],
+      "options": {}
+    },
+    {
+      "id": 13,
+      "title": "Txs per block (EL)",
+      "type": "timeseries",
+      "description": "Transactions in each processed block. Drives BAL + tx bytes, hence payload_blob_count \u2014 read alongside the blobs panel.",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "PBFA97CFB590B2093"
+      },
+      "gridPos": {
+        "h": 9,
+        "w": 12,
+        "x": 12,
+        "y": 4
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "drawStyle": "bars",
+            "fillOpacity": 60,
+            "lineWidth": 1
+          },
+          "unit": "short",
+          "decimals": 0,
+          "min": 0
+        },
+        "overrides": []
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "PBFA97CFB590B2093"
+          },
+          "expr": "max(transaction_count)",
+          "legendFormat": "txs",
+          "refId": "A"
+        }
+      ],
+      "options": {}
+    },
+    {
+      "id": 17,
+      "title": "Encoded payload size (EL)",
+      "type": "timeseries",
+      "description": "RLP-encoded bytes packed into payload blobs, stacked: block access list (BAL) + transactions. Dashed lines mark whole-blob boundaries (124 KiB = SAFE_BYTES_PER_BLOB each), so the stack height shows how many payload blobs the block needs.",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "PBFA97CFB590B2093"
+      },
+      "gridPos": {
+        "h": 9,
+        "w": 12,
+        "x": 0,
+        "y": 13
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "drawStyle": "bars",
+            "fillOpacity": 80,
+            "lineWidth": 1,
+            "stacking": {
+              "mode": "normal",
+              "group": "A"
+            },
+            "thresholdsStyle": {
+              "mode": "dashed"
+            }
+          },
+          "unit": "bytes",
+          "min": 0,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "transparent",
+                "value": null
+              },
+              {
+                "color": "blue",
+                "value": 126976
+              },
+              {
+                "color": "blue",
+                "value": 253952
+              },
+              {
+                "color": "blue",
+                "value": 380928
+              },
+              {
+                "color": "blue",
+                "value": 507904
+              },
+              {
+                "color": "blue",
+                "value": 634880
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "PBFA97CFB590B2093"
+          },
+          "expr": "max(eip8142_payload_bal_bytes)",
+          "legendFormat": "BAL (RLP)",
+          "refId": "A"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "PBFA97CFB590B2093"
+          },
+          "expr": "max(eip8142_payload_txs_bytes)",
+          "legendFormat": "txs (RLP)",
+          "refId": "B"
+        }
+      ],
+      "options": {}
+    },
+    {
+      "id": 3,
+      "title": "Last payload-blob fill (EL)",
+      "type": "timeseries",
+      "description": "Fill fraction of the trailing (zero-padded) payload blob. Low values = wasted DA/proving bytes in the last blob.",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "PBFA97CFB590B2093"
+      },
+      "gridPos": {
+        "h": 9,
+        "w": 12,
+        "x": 12,
+        "y": 13
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {},
+          "unit": "percentunit",
+          "min": 0,
+          "max": 1
+        },
+        "overrides": []
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "PBFA97CFB590B2093"
+          },
+          "expr": "max(eip8142_last_payload_blob_utilization)",
+          "legendFormat": "trailing-blob fill",
+          "refId": "A"
+        }
+      ],
+      "options": {}
+    },
+    {
+      "id": 6,
+      "title": "Engine API",
+      "type": "row",
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 22
+      },
+      "panels": []
+    },
+    {
+      "id": 7,
+      "title": "engine_newPayload version (EL)",
+      "type": "timeseries",
+      "description": "newPayload version in use: flat at V4, single step to V6 at the fork (V5 skipped).",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "PBFA97CFB590B2093"
+      },
+      "gridPos": {
+        "h": 7,
+        "w": 12,
+        "x": 0,
+        "y": 23
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "lineInterpolation": "stepAfter",
+            "lineWidth": 2,
+            "pointSize": 4,
+            "showPoints": "always",
+            "fillOpacity": 0,
+            "spanNulls": true
+          },
+          "decimals": 0,
+          "min": 3,
+          "max": 8
+        },
+        "overrides": []
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "PBFA97CFB590B2093"
+          },
+          "expr": "(6 * clamp_max(sum(increase(rpc_requests_total{method=\"engine_newPayloadV6\"}[5m])), 1) > 0) or (4 * clamp_max(sum(increase(rpc_requests_total{method=\"engine_newPayloadV4\"}[5m])), 1) > 0)",
+          "legendFormat": "newPayload version",
+          "refId": "A"
+        }
+      ],
+      "options": {}
+    },
+    {
+      "id": 8,
+      "title": "engine_getPayload version (EL)",
+      "type": "timeseries",
+      "description": "getPayload version in use: flat at V5, single step to V7 at the fork (V6 skipped).",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "PBFA97CFB590B2093"
+      },
+      "gridPos": {
+        "h": 7,
+        "w": 12,
+        "x": 12,
+        "y": 23
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "lineInterpolation": "stepAfter",
+            "lineWidth": 2,
+            "pointSize": 4,
+            "showPoints": "always",
+            "fillOpacity": 0,
+            "spanNulls": true
+          },
+          "decimals": 0,
+          "min": 3,
+          "max": 8
+        },
+        "overrides": []
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "PBFA97CFB590B2093"
+          },
+          "expr": "(7 * clamp_max(sum(increase(rpc_requests_total{method=\"engine_getPayloadV7\"}[5m])), 1) > 0) or (5 * clamp_max(sum(increase(rpc_requests_total{method=\"engine_getPayloadV5\"}[5m])), 1) > 0)",
+          "legendFormat": "getPayload version",
+          "refId": "A"
+        }
+      ],
+      "options": {}
+    },
+    {
+      "id": 22,
+      "title": "Engine getPayload / newPayload latency (EL)",
+      "type": "timeseries",
+      "description": "getPayload/newPayload handler-duration percentiles (rpc_request_duration_seconds) across versions and nodes. p95 is the stall predictor \u2014 block production is a per-slot deadline, so it's the tail that crosses the CL's getPayload limit, not the mean. p95\u2009\u226b\u2009p50 \u21d2 a few heavy blocks (tail); both high \u21d2 systemic. Amber 1s = warning band (attesters vote at SECONDS_PER_SLOT/3=4s); red 2s = CL getPayload deadline, crossing it times out production (stall). Gaps when idle/stalled.",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "PBFA97CFB590B2093"
+      },
+      "gridPos": {
+        "h": 7,
+        "w": 12,
+        "x": 0,
+        "y": 30
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "drawStyle": "line",
+            "lineWidth": 2,
+            "fillOpacity": 0,
+            "thresholdsStyle": {
+              "mode": "line"
+            }
+          },
+          "unit": "s",
+          "min": 0,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "transparent",
+                "value": null
+              },
+              {
+                "color": "orange",
+                "value": 1
+              },
+              {
+                "color": "red",
+                "value": 2
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "PBFA97CFB590B2093"
+          },
+          "refId": "A",
+          "legendFormat": "getPayload p95",
+          "expr": "histogram_quantile(0.95, sum by (le) (rate(rpc_request_duration_seconds_bucket{namespace=\"engine\",method=~\"engine_getPayloadV[0-9]+\"}[$__rate_interval])))"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "PBFA97CFB590B2093"
+          },
+          "refId": "B",
+          "legendFormat": "getPayload p50",
+          "expr": "histogram_quantile(0.5, sum by (le) (rate(rpc_request_duration_seconds_bucket{namespace=\"engine\",method=~\"engine_getPayloadV[0-9]+\"}[$__rate_interval])))"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "PBFA97CFB590B2093"
+          },
+          "refId": "C",
+          "legendFormat": "newPayload p95",
+          "expr": "histogram_quantile(0.95, sum by (le) (rate(rpc_request_duration_seconds_bucket{namespace=\"engine\",method=~\"engine_newPayloadV[0-9]+\"}[$__rate_interval])))"
+        }
+      ],
+      "options": {}
+    },
+    {
+      "id": 23,
+      "title": "Block production rate (EL)",
+      "type": "timeseries",
+      "description": "Execution blocks imported per minute (rate of block_number, network max). ~5/min at 12s slots; drops to 0 when the chain stalls (no new blocks) \u2014 the at-a-glance liveness signal, alongside the latency panel.",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "PBFA97CFB590B2093"
+      },
+      "gridPos": {
+        "h": 7,
+        "w": 12,
+        "x": 12,
+        "y": 30
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "drawStyle": "line",
+            "lineWidth": 2,
+            "fillOpacity": 20
+          },
+          "unit": "short",
+          "min": 0,
+          "decimals": 1
+        },
+        "overrides": []
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "PBFA97CFB590B2093"
+          },
+          "refId": "A",
+          "legendFormat": "blocks/min",
+          "expr": "max(rate(block_number[$__rate_interval])) * 60"
+        }
+      ],
+      "options": {}
+    },
+    {
+      "id": 18,
+      "title": "Payload building",
+      "type": "row",
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 37
+      },
+      "panels": []
+    },
+    {
+      "id": 19,
+      "title": "BAL size: cheap estimate vs exact (EL)",
+      "type": "timeseries",
+      "description": "Block-access-list byte size at the builder's most recent exact measurement. 'estimate' is the cheap O(1) incremental upper bound that gates tx selection; 'exact' is the canonical-encoder measurement, taken only when the estimate puts the block near MAX_BLOBS. Recorded for every built block at finalize (per-node / builder-local), so the estimate's looseness is visible on every block, not just near the cap.",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "PBFA97CFB590B2093"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 38
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "drawStyle": "line",
+            "lineWidth": 2,
+            "fillOpacity": 10,
+            "showPoints": "always",
+            "pointSize": 5,
+            "spanNulls": true
+          },
+          "unit": "bytes",
+          "min": 0
+        },
+        "overrides": []
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "PBFA97CFB590B2093"
+          },
+          "expr": "eip8142_bal_estimated_size_bytes{service=\"$node\"}",
+          "legendFormat": "estimate (upper bound)",
+          "refId": "A"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "PBFA97CFB590B2093"
+          },
+          "expr": "eip8142_bal_actual_size_bytes{service=\"$node\"}",
+          "legendFormat": "exact",
+          "refId": "B"
+        }
+      ],
+      "options": {}
+    },
+    {
+      "id": 20,
+      "title": "BAL estimate over-count (EL)",
+      "type": "timeseries",
+      "description": "estimate \u2212 exact for every built block (per-node): how much the increment-only cheap estimate over-states the real BAL size (it never under-counts, so this stays \u2265 0). Large or sustained gaps mean the builder falls back to the exact measurement earlier than necessary \u2014 the signal for tightening the estimate (resync / per-account tracking).",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "PBFA97CFB590B2093"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 38
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "drawStyle": "bars",
+            "fillOpacity": 70,
+            "lineWidth": 1
+          },
+          "unit": "bytes",
+          "min": 0
+        },
+        "overrides": []
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "PBFA97CFB590B2093"
+          },
+          "expr": "clamp_min(eip8142_bal_estimated_size_bytes{service=\"$node\"} - eip8142_bal_actual_size_bytes{service=\"$node\"}, 0)",
+          "legendFormat": "over-count",
+          "refId": "A"
+        }
+      ],
+      "options": {}
+    },
+    {
+      "id": 9,
+      "title": "Payload-blob KZG latency (EL)",
+      "type": "timeseries",
+      "description": "Payload-blob KZG duration by op: build_bundle = builder computing commitments + EIP-7594 cell proofs for the payload blobs (the getPayload latency jump at Bib activation); commit = native newPayload commitment recompute/verify (MSM); proofs = zk getPayload openings.",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "PBFA97CFB590B2093"
+      },
+      "gridPos": {
+        "h": 7,
+        "w": 12,
+        "x": 0,
+        "y": 46
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {},
+          "unit": "s",
+          "min": 0
+        },
+        "overrides": []
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "PBFA97CFB590B2093"
+          },
+          "expr": "histogram_quantile(0.95, sum by (le, op) (rate(eip8142_kzg_duration_seconds_bucket[$__rate_interval])))",
+          "legendFormat": "p95 {{op}}",
+          "refId": "A"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "PBFA97CFB590B2093"
+          },
+          "expr": "histogram_quantile(0.50, sum by (le, op) (rate(eip8142_kzg_duration_seconds_bucket[$__rate_interval])))",
+          "legendFormat": "p50 {{op}}",
+          "refId": "B"
+        }
+      ],
+      "options": {}
+    },
+    {
+      "id": 24,
+      "title": "getPayload build phases (EL)",
+      "type": "timeseries",
+      "description": "p95 of each getPayload build phase (eip8142_build_phase_seconds): fill_transactions (EVM exec + tx selection), encode (RLP BAL+txs into payload blobs), build_bundle (KZG commitments + EIP-7594 cell proofs). Sums to ~the getPayload latency, so this attributes the 2s budget by phase instead of inferring it. Amber 1s / red 2s = the getPayload warning/deadline (whole-call, not per-phase). Builder-local ($node).",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "PBFA97CFB590B2093"
+      },
+      "gridPos": {
+        "h": 7,
+        "w": 12,
+        "x": 12,
+        "y": 46
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "drawStyle": "line",
+            "lineWidth": 2,
+            "fillOpacity": 0,
+            "thresholdsStyle": {
+              "mode": "line"
+            }
+          },
+          "unit": "s",
+          "min": 0,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "transparent",
+                "value": null
+              },
+              {
+                "color": "orange",
+                "value": 1
+              },
+              {
+                "color": "red",
+                "value": 2
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "PBFA97CFB590B2093"
+          },
+          "refId": "A",
+          "legendFormat": "{{phase}} p95",
+          "expr": "histogram_quantile(0.95, sum by (le, phase) (rate(eip8142_build_phase_seconds_bucket[$__rate_interval])))"
+        }
+      ],
+      "options": {}
+    }
+  ],
+  "preload": false,
+  "schemaVersion": 42,
+  "tags": [
+    "eip8142",
+    "bib"
+  ],
+  "templating": {
+    "list": [
+      {
+        "name": "node",
+        "type": "query",
+        "label": "EL node (builder panels)",
+        "datasource": {
+          "type": "prometheus",
+          "uid": "PBFA97CFB590B2093"
+        },
+        "definition": "label_values(rpc_requests_total, service)",
+        "query": {
+          "qryType": 1,
+          "query": "label_values(rpc_requests_total, service)",
+          "refId": "StandardVariableQuery"
+        },
+        "regex": "/el-.*/",
+        "sort": 1,
+        "includeAll": false,
+        "multi": false,
+        "current": {},
+        "options": [],
+        "refresh": 2,
+        "hide": 0,
+        "description": "Selects the EL node for the per-node 'BAL ...' builder-estimate panels only; all other panels are network-wide."
+      }
+    ]
+  },
+  "time": {
+    "from": "now-30m",
+    "to": "now"
+  },
+  "timepicker": {},
+  "timezone": "",
+  "title": "EIP-8142 Block-in-Blobs",
+  "uid": "eip8142-bib",
+  "version": 23
+}

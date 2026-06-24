@@ -67,10 +67,32 @@ def generate_el_cl_genesis_data(
 
     files[GENESIS_VALUES_PATH] = genesis_generation_config_artifact_name
 
+    genesis_run = "cp /opt/values.env /config/values.env && ./entrypoint.sh all && mkdir /network-configs && mv /data/metadata/* /network-configs/ && mv /data/parsed /network-configs/parsed"
+
+    # EIP-8142 (Bib prototype): the upstream generator doesn't know the Bib fork, so
+    # patch its output in place — before the `el_cl_genesis_data` artifact is stored —
+    # so the single artifact carries the Bib config. Bib activates after genesis (the
+    # Fulu genesis state upgrades to Bib at the bib epoch), so this is purely additive:
+    # append BIB_FORK_{EPOCH,VERSION} to the CL config.yaml and set amsterdamTime +
+    # eip8142Time on the EL genesis.json. `genesis_unix_timestamp` is a Kurtosis runtime
+    # future reference, so the addition runs in the shell; the genesis.json edit uses
+    # python3 (always present in the generator image) to avoid a jq dependency.
+    if network_params.bib_fork_epoch != constants.FAR_FUTURE_EPOCH:
+        bib_offset = network_params.bib_fork_epoch * 32 * network_params.seconds_per_slot
+        genesis_run += (
+            " && BIB_TIME=$(({genesis_ts} + {offset}))"
+            + " && printf '\\nBIB_FORK_VERSION: 0x78000038\\nBIB_FORK_EPOCH: {epoch}\\n' >> /network-configs/config.yaml"
+            + " && python3 -c \"import json; p='/network-configs/genesis.json'; d=json.load(open(p)); d['config']['amsterdamTime']=$BIB_TIME; d['config']['eip8142Time']=$BIB_TIME; json.dump(d, open(p,'w'))\""
+        ).format(
+            genesis_ts=genesis_unix_timestamp,
+            offset=bib_offset,
+            epoch=network_params.bib_fork_epoch,
+        )
+
     genesis = plan.run_sh(
         name="run-generate-genesis",
         description="Creating genesis",
-        run="cp /opt/values.env /config/values.env && ./entrypoint.sh all && mkdir /network-configs && mv /data/metadata/* /network-configs/ && mv /data/parsed /network-configs/parsed",
+        run=genesis_run,
         image=image,
         files=files,
         store=[

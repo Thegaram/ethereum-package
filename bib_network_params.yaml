@@ -1,0 +1,105 @@
+# EIP-8142 "Block-in-Blobs" (Bib) devnet — non-zk.
+# 2× ethrex (EL) + lighthouse (CL + VC). Genesis is Fulu; Bib activates at epoch 1.
+# Everything else falls back to ethereum-package defaults.
+participants:
+  - el_type: ethrex
+    el_image: ethrex:bib          # locally built: docker build -t ethrex:bib . (in /workspace/ethrex)
+    cl_type: lighthouse
+    cl_image: lighthouse:bib      # locally built: docker build -t lighthouse:bib . (in /workspace/lighthouse)
+    vc_type: lighthouse
+    vc_image: lighthouse:bib
+    count: 2                       # 2 pairs: exercises gossip + import-verify (CL metrics)
+    # CPU headroom for the parallel payload-blob KZG (EIP-7594 cell proofs).
+    # getPayload computes one cell-proof MSM per payload blob; ethrex now runs
+    # these across rayon threads (crates/common/types/blobs_bundle.rs), so the
+    # builder needs several cores AT THE BUILD INSTANT or 4 blobs serialize back
+    # toward the CL's ~2 s deadline. el_max_cpu stays 0 (UNLIMITED — a cap would
+    # throttle the MSM); el_min_cpu is a *reservation* so the proposer is
+    # guaranteed cores under contention from the other co-located services.
+    el_min_cpu: 4000               # millicpu: reserve ~4 cores/EL for parallel MSM (count:2 => 8 cores reserved for ELs)
+    el_min_mem: 4096               # MiB: ethrex working set + blob buffers
+    # HOST REQUIREMENT: with count:2 (2 EL + 2 CL + 2 VC) + prometheus/grafana +
+    # spamoor, give the host comfortably more than the reserved 8 EL cores (≳12
+    # physical cores recommended). If the enclave fails to start with a CPU-
+    # reservation error, the host is too small — lower el_min_cpu (e.g. 2000) and
+    # accept fewer parallel MSM lanes, or drop to count:1.
+network_params:
+  fulu_fork_epoch: 0
+  bib_fork_epoch: 1               # new key (FAR_FUTURE by default = Bib off)
+  gloas_fork_epoch: 18446744073709551615   # ePBS off
+additional_services:
+  - prometheus_grafana            # required to see the EIP-8142 dashboard
+  # `dora` dropped: it can't decode the custom `bib` fork ("unrecognised data
+  # version bib") and just spams errors. Use Grafana + the beacon API instead.
+  - spamoor                       # light tx load (see spamoor_params below)
+# HIGH-VARIABILITY load — the goal is a wide block-to-block swing in tx count AND
+# payload_blob_count, not a steady saturated stream. Two levers create the spread:
+#   1. MIXED gas profiles: eoatx (~21k gas, tiny) + erctx (~50k gas, touches ERC-20
+#      contract storage). Because per-tx gas differs, the number of txs that fit a
+#      block — and the BAL size (distinct accounts/slots touched) — varies with the
+#      mix the proposer happens to pack each slot.
+#   2. HUGE, deliberately under-saturating wallet pools: combined offered load is
+#      kept *below* block capacity (~60M gas / ~2000 simple txs) so blocks are NOT
+#      always full — arrival jitter then shows up as real variance instead of every
+#      block pinning to the gas cap (a saturated stream is what makes counts flat).
+# Combined blob budget is MAX_BLOBS = 21 at the fork; this stays well under it.
+# NOTE: spamoor's steady scheduler limits *true* burstiness; if you want even more
+# variance, spamoor scenario flags for random calldata/gas would help (verify the
+# flag names against your spamoor version before adding).
+spamoor_params:
+  spammers:
+    # Light, cheap transfers — small BAL contribution, many distinct accounts.
+    - name: "EOA (light transfers, variable accounts)"
+      scenario: eoatx
+      config:
+        throughput: 500
+        max_pending: 4000
+        max_wallets: 6000       # very large pool -> account set (and BAL) varies a lot
+        base_fee: 20
+    # Heavier ERC-20 txs — more gas + contract-storage writes => bigger, more variable
+    # BAL, and (different gas/tx vs eoatx) a swinging tx-count-per-block.
+    - name: "ERC-20 (heavy, storage-touching)"
+      scenario: erctx
+      config:
+        throughput: 300
+        max_pending: 2000
+        max_wallets: 3000
+        base_fee: 20
+    - name: "Blobs (moderate, variable sidecars)"
+      scenario: blob-combined
+      config:
+        throughput: 3           # ~3 type-3 blob txs/slot
+        sidecars: 2             # 2 blobs/tx -> ~6 user blobs/slot peak, well under 21
+        max_pending: 12
+        max_wallets: 40
+        base_fee: 20
+        blob_fee: 20
+    # ----------------------------------------------------------------------------
+    # BIG BLOCK SPAMMER (PAYLOAD-BLOB FILLER) — DISABLED BY DEFAULT.
+    # Purpose: drive blocks past >4 EIP-8142 *payload* blobs by packing large
+    # calldata (payload blobs encode RLP(BAL)+RLP(txs), so they scale with BYTES,
+    # not gas). To ENABLE: delete the leading "# " on the block below.
+    #
+    # Calldata data refs (spamoor `data`, parsed by ParseBlobRefsBytes):
+    #   random:N            -> N random (non-zero) bytes
+    #   repeat:0x00:N       -> N zero bytes
+    # Gas (Amsterdam EIP-7623 floor = 16 gas/token; tokens = zero + 4*nonzero):
+    #   zero byte    = 16 gas/byte  -> 25k zeros  ~=   421k gas (gas_limit ~450k)
+    #   random byte  = 64 gas/byte  -> 25k random ~= 1,621k gas (gas_limit  2M)
+    # ~127 KB of calldata ~= 1 payload blob. Non-zero data is gas-bound to ~7
+    # blobs/block (60M gas / 64); ZERO bytes reach the 21-blob cap (60M / 16).
+    # Tune `throughput` to walk the count up; verify actual calldata with
+    # `log_txs: true` if you switch to the zero-byte ref. `gas_limit: 0` lets
+    # spamoor estimate (avoids hand-calc); the explicit 2M below is known-good.
+    #
+    # - name: "Big block (payload-blob filler)"
+    #   scenario: eoatx
+    #   config:
+    #     throughput: 30          # ~30 fat txs/slot -> ~5-7 payload blobs; raise to push higher
+    #     max_pending: 200
+    #     max_wallets: 500
+    #     base_fee: 20
+    #     tip_fee: 2
+    #     gas_limit: 2000000      # covers random:25000 (~1.62M); use ~450000 for repeat:0x00:25000
+    #     amount: 20
+    #     data: "random:25000"    # 25k random bytes/tx; for the 21-blob cap use "repeat:0x00:25000"

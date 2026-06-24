@@ -249,6 +249,7 @@ SUBCATEGORY_PARAMS = {
         "deneb_fork_epoch",
         "electra_fork_epoch",
         "fulu_fork_epoch",
+        "bib_fork_epoch",
         "gloas_fork_epoch",
         "heze_fork_epoch",
         "network_sync_base_url",
