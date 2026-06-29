@@ -10,12 +10,21 @@ participants:
     vc_type: lighthouse
     vc_image: lighthouse:bib
     count: 2
+    cl_log_level: debug # lighthouse --debug-level=debug (da_checker / fork-choice observability)
     el_min_cpu: 4000 # CPU headroom for parallel payload blob cell proof computation.
     el_min_mem: 4096
 
 network_params:
   fulu_fork_epoch: 0
   bib_fork_epoch: 1
+  # ethrex couples Amsterdam to the BPO2 blob params: get_fork_blob_schedule() returns the
+  # bpo2 schedule (max 21) as soon as Amsterdam (== eip8142Time == the Bib epoch) is active,
+  # regardless of the BPO schedule. The CL only bumps blob capacity at bpo_2_epoch, which
+  # defaults to u64::MAX (disabled) -> the CL stays at bpo1's max 15 while the EL builds up
+  # to 21-blob payloads -> ExecutionInvalidBlobsLen { max: 15, actual: 21 } and the chain
+  # stalls at activation. Align the CL's 21-blob bump with the EL by activating bpo2 at the
+  # Bib epoch.
+  bpo_2_epoch: 1 # MUST match bib_fork_epoch (EL ties max-blobs=21 to Amsterdam/Bib)
   gloas_fork_epoch: 18446744073709551615 # ePBS off
 
 additional_services:
